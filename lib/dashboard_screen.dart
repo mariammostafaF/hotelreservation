@@ -42,23 +42,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     'Moscow, Russia',
   ];
 
-  double _scale = 1.0;
-
-  // Method to scale button on press for feedback
-  void _onTapDown(TapDownDetails details) {
-    setState(() {
-      _scale = 0.95;
-    });
-  }
-
-  void _onTapUp(TapUpDetails details) {
-    setState(() {
-      _scale = 1.0;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Extracting reservation details
     final reservation = widget.reservationDetails;
     final destination = reservation['destination'] ?? 'Not Available';
     final placeName = reservation['placeName'] ?? 'Not Available';
@@ -69,70 +55,129 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Dashboard'),
-        leading: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ProfileScreen(
-                  reservationDetails: {
-                    'user': widget.username,
-                    ...widget.reservationDetails,
-                  },
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.account_circle, size: 28),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfileScreen(
+                    reservationDetails: {
+                      'user': widget.username,
+                      ...widget.reservationDetails,
+                    },
+                  ),
                 ),
-              ),
-            );
-          },
-          child: Icon(Icons.account_circle, size: 30),
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue.shade300, Colors.blue.shade700],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+              );
+            },
           ),
-        ),
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome Message
-            Text(
-              'Welcome, ${widget.username}!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+        ],
+      ),
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/background4.jpg'),
+                fit: BoxFit.cover,
               ),
             ),
-            SizedBox(height: 20),
+          ),
+          Container(
+            color: Colors.black.withOpacity(0.5),
+          ),
+          // Main content
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Latest Check-ins
+                  _buildSectionCard(
+                    title: 'Latest Check-ins',
+                    children: [
+                      _buildCheckInTile(
+                        getDisplayName(widget.username),
+                        'Hilton, Tokyo',
+                        Colors.green,
+                        'Paid',
+                      ),
+                      _buildCheckInTile(
+                        getDisplayName(widget.username),
+                        'Le Meridien, New York',
+                        Colors.green,
+                        'Paid',
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
 
-            // Destination Dropdown
-            _buildDestinationDropdown(),
-            SizedBox(height: 20),
+                  // Current Reservation Details
+                  _buildSectionCard(
+                    title: 'Current Reservation Details',
+                    children: [
+                      _buildReservationList(
+                          destination, placeName, date, time, people),
+                    ],
+                  ),
+                  SizedBox(height: 16),
 
-            // Confirm Destination Button
-            _buildConfirmButton(),
+                  // Destination Selection
+                  Text(
+                    'Select Destination:',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10),
+                  _buildDestinationDropdown(),
+                  SizedBox(height: 16),
 
-            SizedBox(height: 20),
-
-            // Reservation Details
-            Text(
-              'Reservation Details:',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  // Confirm Destination Button
+                  Center(
+                    child: ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(
+                            Colors.blue), // Set button color to blue
+                        padding: MaterialStateProperty.all<EdgeInsets>(
+                            EdgeInsets.symmetric(
+                                vertical: 12.0,
+                                horizontal: 20.0)), // Optional padding
+                      ),
+                      onPressed: () {
+                        if (selectedDestination == null ||
+                            selectedDestination!.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text('Please select a destination!')),
+                          );
+                          return;
+                        }
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CategorySelectionScreen(
+                              destination: selectedDestination!,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Confirm Destination',
+                        style: TextStyle(
+                            color: Colors
+                                .white), // Ensure text color contrasts with blue
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            SizedBox(height: 10),
-
-            // Reservation List
-            _buildReservationList(destination, placeName, date, time, people),
-          ],
-        ),
+          ),
+        ],
       ),
-
-      // Logout Button
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           try {
             await FirebaseAuth.instance.signOut();
@@ -146,107 +191,106 @@ class _DashboardScreenState extends State<DashboardScreen> {
             );
           }
         },
-        child: Icon(Icons.exit_to_app),
-        backgroundColor: Colors.redAccent,
+        label: Text('Logout'),
+        icon: Icon(Icons.exit_to_app),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  Widget _buildSectionCard(
+      {required String title, required List<Widget> children}) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCheckInTile(
+      String name, String hotel, Color color, String status) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: color,
+        child: Icon(Icons.person, color: Colors.white),
+      ),
+      title: Text(name),
+      subtitle: Text(hotel),
+      trailing: Text(
+        status,
+        style: TextStyle(color: color, fontWeight: FontWeight.bold),
       ),
     );
   }
 
   Widget _buildDestinationDropdown() {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 300),
-      padding: EdgeInsets.symmetric(horizontal: 8.0),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.white),
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      child: DropdownButtonFormField<String>(
-        value: selectedDestination,
-        style: TextStyle(color: Colors.black, fontSize: 16),
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+    return DropdownButtonFormField<String>(
+      value: selectedDestination,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
         ),
-        hint: Text('Select a Destination', style: TextStyle(color: Colors.grey)),
-        items: destinations.map((destination) {
-          return DropdownMenuItem(
-            value: destination,
-            child: Row(
-              children: [
-                Icon(Icons.location_on, color: Colors.black),
-                SizedBox(width: 10),
-                Text(destination),
-              ],
-            ),
-          );
-        }).toList(),
-        onChanged: (value) {
-          setState(() {
-            selectedDestination = value;
-          });
-        },
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
+      hint: Text('Select a Destination'),
+      items: destinations.map((destination) {
+        return DropdownMenuItem(
+          value: destination,
+          child: Text(destination),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          selectedDestination = value;
+        });
+      },
     );
   }
 
-  Widget _buildConfirmButton() {
-    return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      child: AnimatedScale(
-        scale: _scale,
-        duration: Duration(milliseconds: 100),
-        curve: Curves.easeInOut,
-        child: ElevatedButton(
-          onPressed: () {
-            if (selectedDestination == null || selectedDestination!.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Please select a destination!')),
-              );
-              return;
-            }
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CategorySelectionScreen(destination: selectedDestination!),
-              ),
-            );
-          },
-          child: Text('Confirm Destination'),
+  Widget _buildReservationList(String destination, String placeName,
+      String date, String time, String people) {
+    return Column(
+      children: [
+        ListTile(
+          leading: Icon(Icons.restaurant, color: Colors.blue),
+          title: Text('Restaurant Reservation: Not Available',
+              style: TextStyle(fontWeight: FontWeight.bold)),
         ),
-      ),
+        ListTile(
+          leading: Icon(Icons.location_on, color: Colors.blue),
+          title: Text('Destination: $destination',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text('Place: $placeName'),
+        ),
+        ListTile(
+          leading: Icon(Icons.calendar_today, color: Colors.blue),
+          title: Text('Date: $date',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text('Time: $time, $people people'),
+        ),
+      ],
     );
   }
 
-  Widget _buildReservationList(String destination, String placeName, String date, String time, String people) {
-    return Expanded(
-      child: ListView(
-        shrinkWrap: true,
-        children: [
-          ListTile(
-            leading: Icon(Icons.restaurant, color: Colors.blue),
-            title: Text('Restaurant Reservation', style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('Pending: $time, $people people'),
-            trailing: Icon(Icons.timer, color: Colors.orange),
-          ),
-          ListTile(
-            leading: Icon(Icons.location_on, color: Colors.blue),
-            title: Text('Destination: $destination', style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('Place: $placeName'),
-            trailing: Icon(Icons.info, color: Colors.blue),
-          ),
-          ListTile(
-            leading: Icon(Icons.calendar_today, color: Colors.blue),
-            title: Text('Date: $date', style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('Time: $time'),
-            trailing: Icon(Icons.access_time, color: Colors.blue),
-          ),
-        ],
-      ),
-    );
+  String getDisplayName(String username) {
+    // Extract name before @
+    return username.split('@').first;
   }
 }

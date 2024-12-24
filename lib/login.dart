@@ -31,34 +31,29 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  // Firebase Login Function
   Future<void> _loginWithFirebase() async {
     if (_formKey.currentState?.validate() ?? false) {
       setState(() {
-        isLoading = true; // Show loading indicator
+        isLoading = true;
       });
 
       try {
-        // Attempt to sign in with Firebase
         await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
-        // Navigate to DashboardScreen on successful login
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => DashboardScreen(
               username: _emailController.text.trim(),
-              reservationDetails: {}, // Passing empty reservationDetails for now
+              reservationDetails: {},
             ),
           ),
         );
       } on FirebaseAuthException catch (e) {
-        // Handle Firebase-specific login errors
         String errorMessage;
-
         switch (e.code) {
           case 'user-not-found':
             errorMessage = 'No user found with this email.';
@@ -72,14 +67,12 @@ class _LoginScreenState extends State<LoginScreen> {
           default:
             errorMessage = 'An unknown error occurred. Please try again.';
         }
-
-        // Show the error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),
         );
       } finally {
         setState(() {
-          isLoading = false; // Hide loading indicator
+          isLoading = false;
         });
       }
     }
@@ -88,121 +81,183 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Email Field
-              AnimatedContainer(
-                duration: Duration(milliseconds: 300),
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue),
-                  borderRadius: BorderRadius.circular(10.0),
-                  boxShadow: [BoxShadow(color: Colors.blueAccent, blurRadius: 6)],
-                ),
-                child: TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                    border: InputBorder.none,
-                  ),
-                  validator: (value) {
-                    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    } else if (!emailRegex.hasMatch(value)) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              SizedBox(height: 20),
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+                image: DecorationImage(
+              image: AssetImage('assets/background.jpg'),
+              fit: BoxFit.cover,
+            )),
+          ),
+          Container(
+            color: Colors.black.withOpacity(0.5),
+          ),
+          // // Background Image
+          // Positioned.fill(
+          //   child: Image.asset(
+          //     'assets/background.jpg', // Replace with your image asset path
+          //     fit: BoxFit.cover,
+          //   ),
+          // ),
+          // Positioned.fill(
+          //   child: Container(
+          //     color: Colors.black.withOpacity(0.5), // Dark overlay
+          //   ),
+          // ),
 
-              // Password Field
-              AnimatedContainer(
-                duration: Duration(milliseconds: 300),
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue),
-                  borderRadius: BorderRadius.circular(10.0),
-                  boxShadow: [BoxShadow(color: Colors.blueAccent, blurRadius: 6)],
-                ),
-                child: TextFormField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock),
-                    border: InputBorder.none,
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    } else if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              SizedBox(height: 20),
+          // Content
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: 100),
 
-              // Login Button
-              GestureDetector(
-                onTapDown: _onTapDown,
-                onTapUp: _onTapUp,
-                child: AnimatedScale(
-                  scale: _scale,
-                  duration: Duration(milliseconds: 100),
-                  curve: Curves.easeInOut,
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : _loginWithFirebase, // Call Firebase login method
-                    child: isLoading
-                        ? CircularProgressIndicator(color: Colors.white)
-                        : Text('Login'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding: EdgeInsets.symmetric(vertical: 12.0),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                  // Title
+                  Text(
+                    'World Travelling Agency\nFor Your Dream Trip',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                ),
-              ),
-              SizedBox(height: 10),
 
-              // Forgot Password Button
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
-                  );
-                },
-                child: Text('Forgot Password?'),
-              ),
-              SizedBox(height: 20),
+                  SizedBox(height: 30),
 
-              // Sign Up Button
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SignUpScreen()),
-                  );
-                },
-                child: Text('Don\'t have an account? Sign Up'),
+                  // Service Icons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildServiceIcon(Icons.hotel, 'Hotels'),
+                      _buildServiceIcon(Icons.restaurant, 'Restaurant'),
+                      // _buildServiceIcon(Icons.train, 'Train/Bus'),
+                      // _buildServiceIcon(Icons.flight, 'Airways'),
+                    ],
+                  ),
+
+                  SizedBox(height: 30),
+
+                  // Login Form
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        _buildTextField(_emailController, 'Email', Icons.email),
+                        SizedBox(height: 20),
+                        _buildTextField(
+                            _passwordController, 'Password', Icons.lock,
+                            isPassword: true),
+                        SizedBox(height: 30),
+
+                        // Login Button
+                        ElevatedButton(
+                          onPressed: isLoading ? null : _loginWithFirebase,
+                          child: isLoading
+                              ? CircularProgressIndicator(color: Colors.white)
+                              : Text(
+                                  'Log In',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            padding: EdgeInsets.symmetric(
+                                vertical: 12.0, horizontal: 40.0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 10),
+
+                        // Forgot Password
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => ForgotPasswordScreen()),
+                            );
+                          },
+                          child: Text(
+                            'Forgot Password?',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+
+                        SizedBox(height: 10),
+
+                        // Sign-Up
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => SignUpScreen()),
+                            );
+                          },
+                          child: Text(
+                            "Haven't account? Register Now",
+                            style: TextStyle(color: Colors.blue),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceIcon(IconData icon, String label) {
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 30,
+          backgroundColor: Colors.white,
+          child: Icon(icon, color: Colors.blue, size: 30),
+        ),
+        SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(color: Colors.white, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField(
+      TextEditingController controller, String hintText, IconData icon,
+      {bool isPassword = false}) {
+    return TextFormField(
+      controller: controller,
+      obscureText: isPassword,
+      style: TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.2),
+        hintText: hintText,
+        hintStyle: TextStyle(color: Colors.white70),
+        prefixIcon: Icon(icon, color: Colors.white),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: BorderSide.none,
         ),
       ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter your $hintText';
+        }
+        return null;
+      },
     );
   }
 }

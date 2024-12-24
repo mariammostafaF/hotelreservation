@@ -16,7 +16,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   double _scale = 1.0;
   String _passwordStrength = "";
-  bool _isLoading = false; // Loading state for Firebase integration
+  bool _isLoading = false;
 
   void _onTapDown(TapDownDetails details) {
     setState(() {
@@ -49,28 +49,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Future<void> _signUpWithFirebase() async {
     if (_formKey.currentState?.validate() ?? false) {
       setState(() {
-        _isLoading = true; // Show loading indicator
+        _isLoading = true;
       });
 
       try {
-        // Firebase sign-up logic
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
-        // Success Message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Account created successfully!')),
         );
 
-        // Navigate to Login Screen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => LoginScreen()),
         );
       } on FirebaseAuthException catch (e) {
-        // Handle Firebase exceptions
         String errorMessage;
         if (e.code == 'email-already-in-use') {
           errorMessage = 'The email is already in use.';
@@ -86,22 +82,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
         );
       } finally {
         setState(() {
-          _isLoading = false; // Hide loading indicator
+          _isLoading = false;
         });
       }
     }
   }
 
-  // Sign-Up with Google
   Future<void> _signUpWithGoogle() async {
     setState(() {
-      _isLoading = true; // Show loading indicator
+      _isLoading = true;
     });
 
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
-        // The user canceled the sign-in
         setState(() {
           _isLoading = false;
         });
@@ -109,22 +103,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }
 
       final GoogleSignInAuthentication googleAuth =
-      await googleUser.authentication;
+          await googleUser.authentication;
 
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Sign in with Google credential
       await FirebaseAuth.instance.signInWithCredential(credential);
 
-      // Success Message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Signed up successfully with Google!')),
       );
 
-      // Navigate to Login Screen or Home
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginScreen()),
@@ -135,7 +126,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
     } finally {
       setState(() {
-        _isLoading = false; // Hide loading indicator
+        _isLoading = false;
       });
     }
   }
@@ -143,194 +134,201 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Sign Up')),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Email Field
-              AnimatedContainer(
-                duration: Duration(milliseconds: 300),
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                      return 'Please enter a valid email address';
-                    }
-                    return null;
-                  },
-                ),
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/background.jpg'),
+                fit: BoxFit.cover,
               ),
-              SizedBox(height: 20),
-
-              // Password Field
-              AnimatedContainer(
-                duration: Duration(milliseconds: 300),
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: TextFormField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock),
-                  ),
-                  obscureText: true,
-                  onChanged: _checkPasswordStrength,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    } else if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              SizedBox(height: 10),
-
-              // Password Strength Indicator
-              Row(
+            ),
+          ),
+          Container(
+            color: Colors.black.withOpacity(0.5),
+          ),
+          SingleChildScrollView(
+            padding: EdgeInsets.all(20.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: LinearProgressIndicator(
-                      value: _passwordStrength == "Strong"
-                          ? 1.0
-                          : (_passwordStrength == "Medium" ? 0.5 : 0.2),
-                      backgroundColor: Colors.grey[300],
-                      color: _passwordStrength == "Strong"
-                          ? Colors.green
-                          : (_passwordStrength == "Medium"
-                          ? Colors.orange
-                          : Colors.red),
-                    ),
-                  ),
-                  SizedBox(width: 10),
                   Text(
-                    _passwordStrength,
+                    'Create an Account',
                     style: TextStyle(
-                      color: _passwordStrength == "Strong"
-                          ? Colors.green
-                          : (_passwordStrength == "Medium"
-                          ? Colors.orange
-                          : Colors.red),
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                ],
-              ),
-              SizedBox(height: 20),
+                  SizedBox(height: 20),
 
-              // Confirm Password Field
-              AnimatedContainer(
-                duration: Duration(milliseconds: 300),
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: TextFormField(
-                  controller: _confirmPasswordController,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    prefixIcon: Icon(Icons.lock_outline),
+                  // Email Field
+                  _buildTextField(_emailController, 'Email', Icons.email),
+                  SizedBox(height: 20),
+
+                  // Password Field
+                  _buildTextField(_passwordController, 'Password', Icons.lock,
+                      isPassword: true, onChanged: _checkPasswordStrength),
+                  SizedBox(height: 10),
+
+                  // Password Strength Indicator
+                  Row(
+                    children: [
+                      Expanded(
+                        child: LinearProgressIndicator(
+                          value: _passwordStrength == "Strong"
+                              ? 1.0
+                              : (_passwordStrength == "Medium" ? 0.5 : 0.2),
+                          backgroundColor: Colors.grey[300],
+                          color: _passwordStrength == "Strong"
+                              ? Colors.green
+                              : (_passwordStrength == "Medium"
+                                  ? Colors.orange
+                                  : Colors.red),
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        _passwordStrength,
+                        style: TextStyle(
+                          color: _passwordStrength == "Strong"
+                              ? Colors.green
+                              : (_passwordStrength == "Medium"
+                                  ? Colors.orange
+                                  : Colors.red),
+                        ),
+                      ),
+                    ],
                   ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value != _passwordController.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              SizedBox(height: 20),
+                  SizedBox(height: 20),
 
-              // Sign Up Button
-              GestureDetector(
-                onTapDown: _onTapDown,
-                onTapUp: _onTapUp,
-                child: AnimatedScale(
-                  scale: _scale,
-                  duration: Duration(milliseconds: 100),
-                  curve: Curves.easeInOut,
-                  child: ElevatedButton(
+                  // Confirm Password Field
+                  _buildTextField(_confirmPasswordController,
+                      'Confirm Password', Icons.lock_outline,
+                      isPassword: true),
+                  SizedBox(height: 20),
+
+                  // Sign Up Button
+                  GestureDetector(
+                    onTapDown: _onTapDown,
+                    onTapUp: _onTapUp,
+                    child: AnimatedScale(
+                      scale: _scale,
+                      duration: Duration(milliseconds: 100),
+                      curve: Curves.easeInOut,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 40, vertical: 15),
+                          backgroundColor: Colors.blueAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        onPressed: _isLoading ? null : _signUpWithFirebase,
+                        child: _isLoading
+                            ? CircularProgressIndicator(color: Colors.white)
+                            : Text('Sign Up',
+                                style: TextStyle(
+                                    fontSize: 18, color: Colors.white)),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+
+                  // Google Sign-Up Button
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.account_circle, color: Colors.white),
+                    label: Text('Sign Up with Google',
+                        style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      backgroundColor: Colors.redAccent,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
-                    onPressed: _isLoading
-                        ? null
-                        : _signUpWithFirebase, // Call Firebase Sign-Up method
-                    child: _isLoading
-                        ? CircularProgressIndicator(color: Colors.white)
-                        : Text('Sign Up', style: TextStyle(fontSize: 18)),
+                    onPressed: _isLoading ? null : _signUpWithGoogle,
                   ),
-                ),
-              ),
-              SizedBox(height: 20),
 
-              // Google Sign-Up Button
-              ElevatedButton.icon(
-                icon: Icon(Icons.account_circle, color: Colors.white), // Google Icon
-                label: Text('Sign Up with Google'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                onPressed: _isLoading
-                    ? null
-                    : _signUpWithGoogle, // Call Google Sign-Up method
-              ),
-
-              // Forgot Password and Login Links
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => ForgotPasswordScreen()),
-                      );
-                    },
-                    child: Text('Forgot Password?'),
-                  ),
-                  Text('|'),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text('Already have an account? Login'),
+                  // Forgot Password and Login Links
+                  SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ForgotPasswordScreen()),
+                          );
+                        },
+                        child: Text('Forgot Password?',
+                            style: TextStyle(color: Colors.white70)),
+                      ),
+                      Text('|', style: TextStyle(color: Colors.white70)),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text('Already have an account? Login',
+                            style: TextStyle(color: Colors.white70)),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hintText,
+    IconData icon, {
+    bool isPassword = false,
+    void Function(String)? onChanged,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: isPassword,
+      onChanged: onChanged,
+      style: TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.2),
+        hintText: hintText,
+        hintStyle: TextStyle(color: Colors.white70),
+        prefixIcon: Icon(icon, color: Colors.white),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: BorderSide.none,
         ),
       ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter your $hintText';
+        }
+        if (hintText == 'Email' &&
+            !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+          return 'Please enter a valid email address';
+        }
+        if (hintText == 'Password' && value.length < 6) {
+          return 'Password must be at least 6 characters long';
+        }
+        if (hintText == 'Confirm Password' &&
+            value != _passwordController.text) {
+          return 'Passwords do not match';
+        }
+        return null;
+      },
     );
   }
 }

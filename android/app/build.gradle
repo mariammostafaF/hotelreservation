@@ -17,12 +17,12 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = "1.8"
     }
 
     defaultConfig {
         applicationId = "com.example.tripadvisor" // Ensure this matches your Firebase project
-        minSdk = 21 // Minimum SDK for Firebase
+        minSdk = 23 // Minimum SDK for Firebase
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -40,7 +40,12 @@ flutter {
 }
 
 dependencies {
-    implementation platform('com.google.firebase:firebase-bom:33.7.0') // Firebase BOM
-    implementation 'com.google.firebase:firebase-auth' // Firebase Authentication
-    implementation 'com.google.firebase:firebase-core' // Firebase Core
+    // Use Firebase BOM to manage Firebase dependencies
+    implementation platform('com.google.firebase:firebase-bom:33.7.0') // Latest BOM version
+
+    // Add individual Firebase services you need
+    implementation 'com.google.firebase:firebase-analytics' // Firebase Analytics (required for basic tracking)
+    implementation 'com.google.firebase:firebase-auth'      // Firebase Authentication
+
+    // Note: firebase-core is not required unless you specifically need it for older use cases.
 }
